@@ -53,6 +53,7 @@ export {
   fetch,
   setDefaults,
   setDefaultsFromResource,
+  onConfigUpdated,
 } from './modular/index';
 
 const statics = {
@@ -280,6 +281,15 @@ class FirebaseConfigModule extends FirebaseModule {
     }
 
     return this._promiseWithConstants(this.native.setDefaultsFromResource(resourceName));
+  }
+
+  /**
+   * Registers a listener to changes in the configuration.
+   *
+   * @param callback - function called on config change
+   */
+  onConfigUpdated(callback) {
+    this.native.onConfigUpdated(callback);
   }
 
   _updateFromConstants(constants) {

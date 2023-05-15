@@ -743,5 +743,21 @@ describe('remoteConfig() modular', function () {
         should(supported).equal(true);
       });
     });
+
+    describe('onConfigUpdated', function () {
+      it.only('onConfigUpdated can run without an issue', async function () {
+        const { getRemoteConfig, onConfigUpdated } = remoteConfigModular;
+        const remoteConfig = getRemoteConfig();
+
+        console.log('Love from JS');
+        await Promise(resolve => {
+          onConfigUpdated(remoteConfig, function (event, error) {
+            console.log('event', event);
+            console.log('error', error);
+            resolve();
+          });
+        });
+      });
+    });
   });
 });

@@ -223,6 +223,29 @@ RCT_EXPORT_METHOD(setDefaultsFromResource
   }
 }
 
+RCT_EXPORT_METHOD(onConfigUpdated
+                  : (FIRApp *)firebaseApp
+                  : (RCTResponseSenderBlock)callback
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+        NSLog(@"Love from ObjC");
+        callback(@[
+            @{
+                @"updatedKeys" : @[@1, @2, @3],
+            },
+            [NSNull null]
+        ]);
+//     [[FIRRemoteConfig remoteConfigWithApp:firebaseApp] addOnConfigUpdateListener:^( FIRRemoteConfigUpdate * _Nonnull configUpdate, NSError * _Nullable error) {
+//         callback(@[
+//             @{
+//                 @"updatedKeys" : [configUpdate.updatedKeys allObjects],
+//             },
+//             error
+//         ]);
+//     }];
+    resolve([self resultWithConstants:[NSNull null] firebaseApp:firebaseApp]);
+}
+
 #pragma mark -
 #pragma mark Internal Helper Methods
 
