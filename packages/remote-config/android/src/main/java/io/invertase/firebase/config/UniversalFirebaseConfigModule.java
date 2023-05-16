@@ -33,6 +33,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
 import io.invertase.firebase.common.UniversalFirebaseModule;
 import com.facebook.react.bridge.*;
 import java.util.*;
@@ -162,7 +163,30 @@ public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
 
       @Override
       public void onError(FirebaseRemoteConfigException error) {
-        callback.invoke(null, error.getMessage());
+        WritableMap userInfoMap = Arguments.createMap();
+
+        if (error == null) {
+          userInfoMap.putString("code", "unknown");
+          userInfoMap.putString(
+            "message",
+            "Operation cannot be completed successfully, due to an unknown error.");
+        } else {
+          userInfoMap.putString("nativeErrorMessage", error.getMessage());
+        }
+
+        if (error.getCause() instanceof FirebaseRemoteConfigFetchThrottledException) {
+          userInfoMap.putString("code", "throttled");
+          userInfoMap.putString(
+            "message",
+            "fetch() operation cannot be completed successfully, due to throttling.");
+        } else {
+          userInfoMap.putString("code", "failure");
+          userInfoMap.putString(
+            "message",
+            "fetch() operation cannot be completed successfully.");
+        }
+
+        callback.invoke(null, userInfoMap);
       }
     });
   }
