@@ -26,13 +26,16 @@ import android.os.Bundle;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.remoteconfig.ConfigUpdate;
+import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import io.invertase.firebase.common.UniversalFirebaseModule;
-import java.util.HashMap;
-import java.util.Map;
+import com.facebook.react.bridge.*;
+import java.util.*;
 
 @SuppressWarnings("WeakerAccess")
 public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
@@ -53,12 +56,12 @@ public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
     FirebaseApp firebaseApp = FirebaseApp.getInstance(appName);
 
     return Tasks.call(
-        getExecutor(),
-        () -> {
-          FirebaseRemoteConfig config = FirebaseRemoteConfig.getInstance(firebaseApp);
-          Tasks.await(expirationDuration == -1 ? config.fetch() : config.fetch(expirationDuration));
-          return null;
-        });
+      getExecutor(),
+      () -> {
+        FirebaseRemoteConfig config = FirebaseRemoteConfig.getInstance(firebaseApp);
+        Tasks.await(expirationDuration == -1 ? config.fetch() : config.fetch(expirationDuration));
+        return null;
+      });
   }
 
   Task<Boolean> fetchAndActivate(String appName) {
@@ -79,47 +82,47 @@ public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
     FirebaseApp firebaseApp = FirebaseApp.getInstance(appName);
 
     return Tasks.call(
-        getExecutor(),
-        () -> {
-          FirebaseRemoteConfigSettings.Builder configSettingsBuilder =
-              new FirebaseRemoteConfigSettings.Builder();
+      getExecutor(),
+      () -> {
+        FirebaseRemoteConfigSettings.Builder configSettingsBuilder =
+          new FirebaseRemoteConfigSettings.Builder();
 
-          if (configSettings.containsKey("minimumFetchInterval")) {
-            double fetchInterval = configSettings.getDouble("minimumFetchInterval");
-            configSettingsBuilder.setMinimumFetchIntervalInSeconds((long) fetchInterval);
-          }
-          if (configSettings.containsKey("fetchTimeout")) {
-            double fetchTimeout = configSettings.getDouble("fetchTimeout");
-            configSettingsBuilder.setFetchTimeoutInSeconds((long) fetchTimeout);
-          }
-          FirebaseRemoteConfig.getInstance(firebaseApp)
-              .setConfigSettingsAsync(configSettingsBuilder.build());
-          return null;
-        });
+        if (configSettings.containsKey("minimumFetchInterval")) {
+          double fetchInterval = configSettings.getDouble("minimumFetchInterval");
+          configSettingsBuilder.setMinimumFetchIntervalInSeconds((long) fetchInterval);
+        }
+        if (configSettings.containsKey("fetchTimeout")) {
+          double fetchTimeout = configSettings.getDouble("fetchTimeout");
+          configSettingsBuilder.setFetchTimeoutInSeconds((long) fetchTimeout);
+        }
+        FirebaseRemoteConfig.getInstance(firebaseApp)
+          .setConfigSettingsAsync(configSettingsBuilder.build());
+        return null;
+      });
   }
 
   Task<Void> setDefaultsFromResource(String appName, String resourceName) {
     FirebaseApp firebaseApp = FirebaseApp.getInstance(appName);
 
     return Tasks.call(
-        getExecutor(),
-        () -> {
-          int resourceId = getXmlResourceIdByName(resourceName);
-          XmlResourceParser xmlResourceParser = null;
+      getExecutor(),
+      () -> {
+        int resourceId = getXmlResourceIdByName(resourceName);
+        XmlResourceParser xmlResourceParser = null;
 
-          try {
-            xmlResourceParser = getApplicationContext().getResources().getXml(resourceId);
-          } catch (Resources.NotFoundException nfe) {
-            // do nothing
-          }
+        try {
+          xmlResourceParser = getApplicationContext().getResources().getXml(resourceId);
+        } catch (Resources.NotFoundException nfe) {
+          // do nothing
+        }
 
-          if (xmlResourceParser != null) {
-            Tasks.await(FirebaseRemoteConfig.getInstance(firebaseApp).setDefaultsAsync(resourceId));
-            return null;
-          }
+        if (xmlResourceParser != null) {
+          Tasks.await(FirebaseRemoteConfig.getInstance(firebaseApp).setDefaultsAsync(resourceId));
+          return null;
+        }
 
-          throw new Exception("resource_not_found");
-        });
+        throw new Exception("resource_not_found");
+      });
   }
 
   Task<Void> setDefaults(String appName, HashMap<String, Object> defaults) {
@@ -143,9 +146,30 @@ public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
     return ensureInitializedTask;
   }
 
+  void onConfigUpdated(String appName, Callback callback) {
+    FirebaseApp firebaseApp = FirebaseApp.getInstance(appName);
+
+    FirebaseRemoteConfig.getInstance(firebaseApp).addOnConfigUpdateListener(new ConfigUpdateListener() {
+      @Override
+      public void onUpdate(ConfigUpdate configUpdate) {
+        Set<String> updatedKeys = configUpdate.getUpdatedKeys();
+        List<String> updatedKeysList = new ArrayList<>(updatedKeys);
+
+        Map<String, Object> results = new HashMap<>();
+        results.put("updatedKeys", updatedKeysList);
+        callback.invoke(Arguments.makeNativeMap(results), null);
+      }
+
+      @Override
+      public void onError(FirebaseRemoteConfigException error) {
+        callback.invoke(null, error.getMessage());
+      }
+    });
+  }
+
   Map<String, Object> getAllValuesForApp(String appName) {
     FirebaseRemoteConfig config =
-        FirebaseRemoteConfig.getInstance(FirebaseApp.getInstance(appName));
+      FirebaseRemoteConfig.getInstance(FirebaseApp.getInstance(appName));
     Map<String, FirebaseRemoteConfigValue> configValueMapRaw = config.getAll();
     Map<String, Object> configValuesMap = new HashMap<>(configValueMapRaw.size());
     for (Map.Entry<String, FirebaseRemoteConfigValue> entry : configValueMapRaw.entrySet()) {
@@ -200,17 +224,18 @@ public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
   public Map<String, Object> getConstantsForApp(String appName) {
     Map<String, Object> appConstants = new HashMap<>();
     FirebaseRemoteConfigInfo remoteConfigInfo =
-        FirebaseRemoteConfig.getInstance(FirebaseApp.getInstance(appName)).getInfo();
+      FirebaseRemoteConfig.getInstance(FirebaseApp.getInstance(appName)).getInfo();
     FirebaseRemoteConfigSettings remoteConfigSettings = remoteConfigInfo.getConfigSettings();
 
     appConstants.put("values", getAllValuesForApp(appName));
     appConstants.put("lastFetchTime", remoteConfigInfo.getFetchTimeMillis());
     appConstants.put(
-        "lastFetchStatus", lastFetchStatusToString((remoteConfigInfo.getLastFetchStatus())));
+      "lastFetchStatus", lastFetchStatusToString((remoteConfigInfo.getLastFetchStatus())));
     appConstants.put(
-        "minimumFetchInterval", remoteConfigSettings.getMinimumFetchIntervalInSeconds());
+      "minimumFetchInterval", remoteConfigSettings.getMinimumFetchIntervalInSeconds());
     appConstants.put("fetchTimeout", remoteConfigSettings.getFetchTimeoutInSeconds());
 
     return appConstants;
   }
+
 }

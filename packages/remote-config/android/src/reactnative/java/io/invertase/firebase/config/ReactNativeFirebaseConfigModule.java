@@ -23,6 +23,10 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledExcept
 import io.invertase.firebase.common.ReactNativeFirebaseModule;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 import javax.annotation.Nullable;
 
 public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
@@ -149,6 +153,11 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
                 rejectPromiseWithExceptionMap(promise, task.getException());
               }
             });
+  }
+
+  @ReactMethod
+  public void onConfigUpdated(String appName, Callback callback) {
+    module.onConfigUpdated(appName, callback);
   }
 
   private WritableMap resultWithConstants(Object result) {

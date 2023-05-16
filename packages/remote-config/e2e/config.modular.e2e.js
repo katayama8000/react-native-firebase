@@ -745,15 +745,16 @@ describe('remoteConfig() modular', function () {
     });
 
     describe('onConfigUpdated', function () {
+      // TODO: Remove .only
       it.only('onConfigUpdated can run without an issue', async function () {
         const { getRemoteConfig, onConfigUpdated } = remoteConfigModular;
         const remoteConfig = getRemoteConfig();
 
-        console.log('Love from JS');
-        await Promise(resolve => {
+        // TODO: Remove promise. Only used for testing
+        await new Promise(resolve => {
           onConfigUpdated(remoteConfig, function (event, error) {
-            console.log('event', event);
-            console.log('error', error);
+            console.warn('event', event);
+            console.warn('error', error);
             resolve();
           });
         });
