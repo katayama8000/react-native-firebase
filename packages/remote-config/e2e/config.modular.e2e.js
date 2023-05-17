@@ -332,6 +332,12 @@ describe('remoteConfig() modular', function () {
         }
       });
     });
+
+    describe('onConfigUpdated', function () {
+      it('onConfigUpdated can run without an issue', async function () {
+        firebase.remoteConfig().onConfigUpdated(function (event, error) {});
+      });
+    });
   });
 
   describe('modular', function () {
@@ -745,19 +751,11 @@ describe('remoteConfig() modular', function () {
     });
 
     describe('onConfigUpdated', function () {
-      // TODO: Remove .only
-      it.only('onConfigUpdated can run without an issue', async function () {
+      it('onConfigUpdated can run without an issue', async function () {
         const { getRemoteConfig, onConfigUpdated } = remoteConfigModular;
         const remoteConfig = getRemoteConfig();
 
-        // TODO: Remove promise. Only used for testing
-        await new Promise(resolve => {
-          onConfigUpdated(remoteConfig, function (event, error) {
-            console.warn('event', event);
-            console.warn('error', error);
-            resolve();
-          });
-        });
+        onConfigUpdated(remoteConfig, function (event, error) {});
       });
     });
   });

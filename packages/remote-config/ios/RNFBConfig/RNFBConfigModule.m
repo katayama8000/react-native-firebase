@@ -225,25 +225,27 @@ RCT_EXPORT_METHOD(setDefaultsFromResource
 
 RCT_EXPORT_METHOD(onConfigUpdated
                   : (FIRApp *)firebaseApp
-                  : (RCTResponseSenderBlock)callback
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
-        NSLog(@"Love from ObjC");
+                  : (RCTResponseSenderBlock)callback) {
+    [[FIRRemoteConfig remoteConfigWithApp:firebaseApp] addOnConfigUpdateListener:^( FIRRemoteConfigUpdate * _Nonnull configUpdate, NSError * _Nullable error) {
+        NSMutableDictionary *userInfo;
+
+        if (error != nil) {
+            userInfo = [NSMutableDictionary dictionary];
+
+            [userInfo setValue:@(NO) forKey:@"fatal"];
+            [userInfo setValue:@"unknown" forKey:@"code"];
+            [userInfo setValue:error.localizedDescription forKey:@"message"];
+            [userInfo setValue:@(error.code) forKey:@"nativeErrorCode"];
+            [userInfo setValue:error.localizedDescription forKey:@"nativeErrorMessage"];
+        }
+
         callback(@[
             @{
-                @"updatedKeys" : @[@1, @2, @3],
+                @"updatedKeys" : [configUpdate.updatedKeys allObjects],
             },
-            [NSNull null]
+            userInfo != nil ? userInfo : [NSNull null],
         ]);
-//     [[FIRRemoteConfig remoteConfigWithApp:firebaseApp] addOnConfigUpdateListener:^( FIRRemoteConfigUpdate * _Nonnull configUpdate, NSError * _Nullable error) {
-//         callback(@[
-//             @{
-//                 @"updatedKeys" : [configUpdate.updatedKeys allObjects],
-//             },
-//             error
-//         ]);
-//     }];
-    resolve([self resultWithConstants:[NSNull null] firebaseApp:firebaseApp]);
+    }];
 }
 
 #pragma mark -
