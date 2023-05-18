@@ -251,23 +251,24 @@ RCT_EXPORT_METHOD(onConfigUpdated
                   : (FIRApp *)firebaseApp
                   : (RCTResponseSenderBlock)callback) {
     FIRConfigUpdateListenerRegistration *newRegistration = [[FIRRemoteConfig remoteConfigWithApp:firebaseApp] addOnConfigUpdateListener:^( FIRRemoteConfigUpdate * _Nonnull configUpdate, NSError * _Nullable error) {
-        NSMutableDictionary *userInfo;
-
         if (error != nil) {
-            userInfo = [NSMutableDictionary dictionary];
+            NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
 
             [userInfo setValue:@(NO) forKey:@"fatal"];
             [userInfo setValue:@"unknown" forKey:@"code"];
             [userInfo setValue:error.localizedDescription forKey:@"message"];
             [userInfo setValue:@(error.code) forKey:@"nativeErrorCode"];
             [userInfo setValue:error.localizedDescription forKey:@"nativeErrorMessage"];
+            
+            callback(@[[NSNull null], userInfo]);
+            return;
         }
 
         callback(@[
             @{
                 @"updatedKeys" : [configUpdate.updatedKeys allObjects],
             },
-            userInfo != nil ? userInfo : [NSNull null],
+            [NSNull null],
         ]);
     }];
     
