@@ -29,13 +29,9 @@ import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
 import io.invertase.firebase.common.ReactNativeFirebaseModule;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.annotation.Nullable;
 
 public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
@@ -53,13 +49,11 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
   public void onCatalystInstanceDestroy() {
     super.onCatalystInstanceDestroy();
 
-    Iterator configRegistrationsIterator = mConfigUpdateRegistrations.entrySet().iterator();
+    Iterator<Map.Entry<String, ConfigUpdateListenerRegistration>> configRegistrationsIterator = mConfigUpdateRegistrations.entrySet().iterator();
 
     while (configRegistrationsIterator.hasNext()) {
-      Map.Entry pair = (Map.Entry) configRegistrationsIterator.next();
-      String appName = (String) pair.getKey();
-      ConfigUpdateListenerRegistration mConfigRegistration =
-        (ConfigUpdateListenerRegistration) pair.getValue();
+      Map.Entry<String, ConfigUpdateListenerRegistration> pair = configRegistrationsIterator.next();
+      ConfigUpdateListenerRegistration mConfigRegistration = pair.getValue();
       mConfigRegistration.remove();
       configRegistrationsIterator.remove();
     }
@@ -68,118 +62,118 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
   @ReactMethod
   public void activate(String appName, Promise promise) {
     module
-        .activate(appName)
-        .addOnCompleteListener(
-            task -> {
-              if (task.isSuccessful()) {
-                promise.resolve(resultWithConstants(task.getResult()));
-              } else {
-                rejectPromiseWithExceptionMap(promise, task.getException());
-              }
-            });
+      .activate(appName)
+      .addOnCompleteListener(
+        task -> {
+          if (task.isSuccessful()) {
+            promise.resolve(resultWithConstants(task.getResult()));
+          } else {
+            rejectPromiseWithExceptionMap(promise, task.getException());
+          }
+        });
   }
 
   @ReactMethod
   public void fetch(String appName, double expirationDurationSeconds, Promise promise) {
     module
-        .fetch(appName, (long) expirationDurationSeconds)
-        .addOnCompleteListener(
-            task -> {
-              if (task.isSuccessful()) {
-                promise.resolve(resultWithConstants(task.getResult()));
-              } else {
-                rejectPromiseWithConfigException(promise, task.getException());
-              }
-            });
+      .fetch(appName, (long) expirationDurationSeconds)
+      .addOnCompleteListener(
+        task -> {
+          if (task.isSuccessful()) {
+            promise.resolve(resultWithConstants(task.getResult()));
+          } else {
+            rejectPromiseWithConfigException(promise, task.getException());
+          }
+        });
   }
 
   @ReactMethod
   public void fetchAndActivate(String appName, Promise promise) {
     module
-        .fetchAndActivate(appName)
-        .addOnCompleteListener(
-            task -> {
-              if (task.isSuccessful()) {
-                promise.resolve(resultWithConstants(task.getResult()));
-              } else {
-                rejectPromiseWithConfigException(promise, task.getException());
-              }
-            });
+      .fetchAndActivate(appName)
+      .addOnCompleteListener(
+        task -> {
+          if (task.isSuccessful()) {
+            promise.resolve(resultWithConstants(task.getResult()));
+          } else {
+            rejectPromiseWithConfigException(promise, task.getException());
+          }
+        });
   }
 
   @ReactMethod
   public void reset(String appName, Promise promise) {
     module
-        .reset(appName)
-        .addOnCompleteListener(
-            task -> {
-              if (task.isSuccessful()) {
-                promise.resolve(resultWithConstants(task.getResult()));
-              } else {
-                rejectPromiseWithConfigException(promise, task.getException());
-              }
-            });
+      .reset(appName)
+      .addOnCompleteListener(
+        task -> {
+          if (task.isSuccessful()) {
+            promise.resolve(resultWithConstants(task.getResult()));
+          } else {
+            rejectPromiseWithConfigException(promise, task.getException());
+          }
+        });
   }
 
   @ReactMethod
   public void setConfigSettings(String appName, ReadableMap configSettings, Promise promise) {
     module
-        .setConfigSettings(appName, Arguments.toBundle(configSettings))
-        .addOnCompleteListener(
-            task -> {
-              if (task.isSuccessful()) {
-                promise.resolve(resultWithConstants(task.getResult()));
-              } else {
-                rejectPromiseWithExceptionMap(promise, task.getException());
-              }
-            });
+      .setConfigSettings(appName, Arguments.toBundle(configSettings))
+      .addOnCompleteListener(
+        task -> {
+          if (task.isSuccessful()) {
+            promise.resolve(resultWithConstants(task.getResult()));
+          } else {
+            rejectPromiseWithExceptionMap(promise, task.getException());
+          }
+        });
   }
 
   @ReactMethod
   public void setDefaults(String appName, ReadableMap defaults, Promise promise) {
     module
-        .setDefaults(appName, defaults.toHashMap())
-        .addOnCompleteListener(
-            task -> {
-              if (task.isSuccessful()) {
-                promise.resolve(resultWithConstants(task.getResult()));
-              } else {
-                rejectPromiseWithExceptionMap(promise, task.getException());
-              }
-            });
+      .setDefaults(appName, defaults.toHashMap())
+      .addOnCompleteListener(
+        task -> {
+          if (task.isSuccessful()) {
+            promise.resolve(resultWithConstants(task.getResult()));
+          } else {
+            rejectPromiseWithExceptionMap(promise, task.getException());
+          }
+        });
   }
 
   @ReactMethod
   public void setDefaultsFromResource(String appName, String resourceName, Promise promise) {
     module
-        .setDefaultsFromResource(appName, resourceName)
-        .addOnCompleteListener(
-            task -> {
-              if (task.isSuccessful()) {
-                promise.resolve(resultWithConstants(task.getResult()));
-              } else {
-                Exception exception = task.getException();
-                if (exception != null && exception.getMessage().equals("resource_not_found")) {
-                  rejectPromiseWithCodeAndMessage(
-                      promise, "resource_not_found", "The specified resource name was not found.");
-                }
-                rejectPromiseWithExceptionMap(promise, task.getException());
-              }
-            });
+      .setDefaultsFromResource(appName, resourceName)
+      .addOnCompleteListener(
+        task -> {
+          if (task.isSuccessful()) {
+            promise.resolve(resultWithConstants(task.getResult()));
+          } else {
+            Exception exception = task.getException();
+            if (exception != null && exception.getMessage().equals("resource_not_found")) {
+              rejectPromiseWithCodeAndMessage(
+                promise, "resource_not_found", "The specified resource name was not found.");
+            }
+            rejectPromiseWithExceptionMap(promise, task.getException());
+          }
+        });
   }
 
   @ReactMethod
   public void ensureInitialized(String appName, Promise promise) {
     module
-        .ensureInitialized(appName)
-        .addOnCompleteListener(
-            task -> {
-              if (task.isSuccessful()) {
-                promise.resolve(resultWithConstants(null));
-              } else {
-                rejectPromiseWithExceptionMap(promise, task.getException());
-              }
-            });
+      .ensureInitialized(appName)
+      .addOnCompleteListener(
+        task -> {
+          if (task.isSuccessful()) {
+            promise.resolve(resultWithConstants(null));
+          } else {
+            rejectPromiseWithExceptionMap(promise, task.getException());
+          }
+        });
   }
 
   @ReactMethod
@@ -208,24 +202,24 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
   private void rejectPromiseWithConfigException(Promise promise, @Nullable Exception exception) {
     if (exception == null) {
       rejectPromiseWithCodeAndMessage(
-          promise,
-          "unknown",
-          "Operation cannot be completed successfully, due to an unknown error.");
+        promise,
+        "unknown",
+        "Operation cannot be completed successfully, due to an unknown error.");
       return;
     }
 
     if (exception.getCause() instanceof FirebaseRemoteConfigFetchThrottledException) {
       rejectPromiseWithCodeAndMessage(
-          promise,
-          "throttled",
-          "fetch() operation cannot be completed successfully, due to throttling.",
-          exception.getMessage());
+        promise,
+        "throttled",
+        "fetch() operation cannot be completed successfully, due to throttling.",
+        exception.getMessage());
     } else {
       rejectPromiseWithCodeAndMessage(
-          promise,
-          "failure",
-          "fetch() operation cannot be completed successfully.",
-          exception.getMessage());
+        promise,
+        "failure",
+        "fetch() operation cannot be completed successfully.",
+        exception.getMessage());
     }
   }
 

@@ -39,6 +39,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import io.invertase.firebase.common.UniversalFirebaseModule;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -160,7 +161,7 @@ public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
 
     return FirebaseRemoteConfig.getInstance(firebaseApp).addOnConfigUpdateListener(new ConfigUpdateListener() {
       @Override
-      public void onUpdate(ConfigUpdate configUpdate) {
+      public void onUpdate(@NotNull ConfigUpdate configUpdate) {
         Set<String> updatedKeys = configUpdate.getUpdatedKeys();
         List<String> updatedKeysList = new ArrayList<>(updatedKeys);
 
@@ -170,17 +171,10 @@ public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
       }
 
       @Override
-      public void onError(FirebaseRemoteConfigException error) {
+      public void onError(@NotNull FirebaseRemoteConfigException error) {
         WritableMap userInfoMap = Arguments.createMap();
 
-        if (error == null) {
-          userInfoMap.putString("code", "unknown");
-          userInfoMap.putString(
-            "message",
-            "Operation cannot be completed successfully, due to an unknown error.");
-        } else {
-          userInfoMap.putString("nativeErrorMessage", error.getMessage());
-        }
+        userInfoMap.putString("nativeErrorMessage", error.getMessage());
 
         if (error.getCause() instanceof FirebaseRemoteConfigFetchThrottledException) {
           userInfoMap.putString("code", "throttled");
