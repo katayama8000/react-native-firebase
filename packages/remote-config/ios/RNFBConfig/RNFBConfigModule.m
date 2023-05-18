@@ -22,6 +22,8 @@
 #import "RNFBConfigModule.h"
 #import "RNFBSharedUtils.h"
 
+static __strong NSMutableDictionary *configUpdateHandlers;
+
 @implementation RNFBConfigModule
 #pragma mark -
 #pragma mark Converters
@@ -82,6 +84,28 @@ RCT_EXPORT_MODULE();
 
 + (BOOL)requiresMainQueueSetup {
   return YES;
+}
+
+- (id)init {
+    self = [super init];
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+    configUpdateHandlers = [[NSMutableDictionary alloc] init];
+    });
+    return self;
+}
+
+- (void)dealloc {
+    [self invalidate];
+}
+
+- (void)invalidate {
+    for (NSString *key in configUpdateHandlers) {
+        FIRConfigUpdateListenerRegistration *registration = [configUpdateHandlers objectForKey:key];
+        [registration remove];
+    }
+    
+    [configUpdateHandlers removeAllObjects];
 }
 
 #pragma mark -
@@ -226,7 +250,7 @@ RCT_EXPORT_METHOD(setDefaultsFromResource
 RCT_EXPORT_METHOD(onConfigUpdated
                   : (FIRApp *)firebaseApp
                   : (RCTResponseSenderBlock)callback) {
-    [[FIRRemoteConfig remoteConfigWithApp:firebaseApp] addOnConfigUpdateListener:^( FIRRemoteConfigUpdate * _Nonnull configUpdate, NSError * _Nullable error) {
+    FIRConfigUpdateListenerRegistration *newRegistration = [[FIRRemoteConfig remoteConfigWithApp:firebaseApp] addOnConfigUpdateListener:^( FIRRemoteConfigUpdate * _Nonnull configUpdate, NSError * _Nullable error) {
         NSMutableDictionary *userInfo;
 
         if (error != nil) {
@@ -246,7 +270,17 @@ RCT_EXPORT_METHOD(onConfigUpdated
             userInfo != nil ? userInfo : [NSNull null],
         ]);
     }];
+    
+    configUpdateHandlers[firebaseApp.name] = newRegistration;
 }
+
+RCT_EXPORT_METHOD(removeConfigUpdateRegistration : (FIRApp *)firebaseApp) {
+  if ([configUpdateHandlers valueForKey:firebaseApp.name]) {
+      [[configUpdateHandlers objectForKey:firebaseApp.name] remove];
+      [configUpdateHandlers removeObjectForKey:firebaseApp.name];
+  }
+}
+
 
 #pragma mark -
 #pragma mark Internal Helper Methods

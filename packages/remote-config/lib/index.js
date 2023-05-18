@@ -287,9 +287,11 @@ class FirebaseConfigModule extends FirebaseModule {
    * Registers a listener to changes in the configuration.
    *
    * @param callback - function called on config change
+   * @returns {function} unsubscribe listener
    */
   onConfigUpdated(callback) {
     this.native.onConfigUpdated(callback);
+    return () => this.native.removeConfigUpdateRegistration();
   }
 
   _updateFromConstants(constants) {

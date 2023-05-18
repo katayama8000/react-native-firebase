@@ -227,7 +227,8 @@ export function setDefaultsFromResource(remoteConfig, resourceName) {
  *
  * @param remoteConfig - RemoteConfig instance
  * @param callback - function called on config change
+ * @returns {function} unsubscribe listener
  */
 export function onConfigUpdated(remoteConfig, callback) {
-  remoteConfig.onConfigUpdated(callback);
+  return remoteConfig.onConfigUpdated(callback);
 }

@@ -31,6 +31,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
+import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
@@ -154,10 +155,10 @@ public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
     return ensureInitializedTask;
   }
 
-  void onConfigUpdated(String appName, Callback callback) {
+  ConfigUpdateListenerRegistration onConfigUpdated(String appName, Callback callback) {
     FirebaseApp firebaseApp = FirebaseApp.getInstance(appName);
 
-    FirebaseRemoteConfig.getInstance(firebaseApp).addOnConfigUpdateListener(new ConfigUpdateListener() {
+    return FirebaseRemoteConfig.getInstance(firebaseApp).addOnConfigUpdateListener(new ConfigUpdateListener() {
       @Override
       public void onUpdate(ConfigUpdate configUpdate) {
         Set<String> updatedKeys = configUpdate.getUpdatedKeys();

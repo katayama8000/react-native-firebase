@@ -335,7 +335,8 @@ describe('remoteConfig() modular', function () {
 
     describe('onConfigUpdated', function () {
       it('onConfigUpdated can run without an issue', async function () {
-        firebase.remoteConfig().onConfigUpdated(function (event, error) {});
+        const unsubscribe = firebase.remoteConfig().onConfigUpdated(function (event, error) {});
+        unsubscribe();
       });
     });
   });
@@ -755,7 +756,8 @@ describe('remoteConfig() modular', function () {
         const { getRemoteConfig, onConfigUpdated } = remoteConfigModular;
         const remoteConfig = getRemoteConfig();
 
-        onConfigUpdated(remoteConfig, function (event, error) {});
+        const unsubscribe = onConfigUpdated(remoteConfig, function (event, error) {});
+        unsubscribe();
       });
     });
   });

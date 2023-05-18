@@ -25,24 +25,44 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
 import io.invertase.firebase.common.ReactNativeFirebaseModule;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
   private static final String SERVICE_NAME = "Config";
   private final UniversalFirebaseConfigModule module;
 
+  private static HashMap<String, ConfigUpdateListenerRegistration> mConfigUpdateRegistrations = new HashMap<>();
+
   ReactNativeFirebaseConfigModule(ReactApplicationContext reactContext) {
     super(reactContext, SERVICE_NAME);
     module = new UniversalFirebaseConfigModule(reactContext, SERVICE_NAME);
+  }
+
+  @Override
+  public void onCatalystInstanceDestroy() {
+    super.onCatalystInstanceDestroy();
+
+    Iterator configRegistrationsIterator = mConfigUpdateRegistrations.entrySet().iterator();
+
+    while (configRegistrationsIterator.hasNext()) {
+      Map.Entry pair = (Map.Entry) configRegistrationsIterator.next();
+      String appName = (String) pair.getKey();
+      ConfigUpdateListenerRegistration mConfigRegistration =
+        (ConfigUpdateListenerRegistration) pair.getValue();
+      mConfigRegistration.remove();
+      configRegistrationsIterator.remove();
+    }
   }
 
   @ReactMethod
@@ -164,7 +184,18 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
 
   @ReactMethod
   public void onConfigUpdated(String appName, Callback callback) {
-    module.onConfigUpdated(appName, callback);
+    ConfigUpdateListenerRegistration registration = module.onConfigUpdated(appName, callback);
+    mConfigUpdateRegistrations.put(appName, registration);
+  }
+
+  @ReactMethod
+  public void removeConfigUpdateRegistration(String appName) {
+    ConfigUpdateListenerRegistration mConfigRegistration = mConfigUpdateRegistrations.get(appName);
+
+    if (mConfigRegistration != null) {
+      mConfigRegistration.remove();
+      mConfigUpdateRegistrations.remove(appName);
+    }
   }
 
   private WritableMap resultWithConstants(Object result) {
