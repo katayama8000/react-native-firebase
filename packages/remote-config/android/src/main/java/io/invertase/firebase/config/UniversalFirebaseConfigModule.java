@@ -174,19 +174,36 @@ public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
       public void onError(@NotNull FirebaseRemoteConfigException error) {
         WritableMap userInfoMap = Arguments.createMap();
 
-        userInfoMap.putString("nativeErrorMessage", error.getMessage());
+        FirebaseRemoteConfigException.Code code = error.getCode();
+        switch (code) {
+          case UNKNOWN:
+            userInfoMap.putString("code", "unknown");
+            break;
+          case CONFIG_UPDATE_STREAM_ERROR:
+            userInfoMap.putString("code", "config_update_stream_error");
+            break;
+          case CONFIG_UPDATE_MESSAGE_INVALID:
+            userInfoMap.putString("code", "config_update_message_invalid");
+            break;
+          case CONFIG_UPDATE_NOT_FETCHED:
+            userInfoMap.putString("code", "config_update_not_fetched");
+            break;
+          case CONFIG_UPDATE_UNAVAILABLE:
+            userInfoMap.putString("code", "config_update_unavailable");
+            break;
+        }
 
         if (error.getCause() instanceof FirebaseRemoteConfigFetchThrottledException) {
-          userInfoMap.putString("code", "throttled");
           userInfoMap.putString(
             "message",
             "fetch() operation cannot be completed successfully, due to throttling.");
         } else {
-          userInfoMap.putString("code", "failure");
           userInfoMap.putString(
             "message",
             "fetch() operation cannot be completed successfully.");
         }
+
+        userInfoMap.putString("nativeErrorMessage", error.getMessage());
 
         callback.invoke(null, userInfoMap);
       }

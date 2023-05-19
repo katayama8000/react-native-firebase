@@ -254,10 +254,8 @@ RCT_EXPORT_METHOD(onConfigUpdated
         if (error != nil) {
             NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
 
-            [userInfo setValue:@(NO) forKey:@"fatal"];
-            [userInfo setValue:@"unknown" forKey:@"code"];
+            [userInfo setValue:@(error.code) forKey:@"code"];
             [userInfo setValue:error.localizedDescription forKey:@"message"];
-            [userInfo setValue:@(error.code) forKey:@"nativeErrorCode"];
             [userInfo setValue:error.localizedDescription forKey:@"nativeErrorMessage"];
             
             callback(@[[NSNull null], userInfo]);
