@@ -250,27 +250,29 @@ RCT_EXPORT_METHOD(setDefaultsFromResource
 RCT_EXPORT_METHOD(onConfigUpdated
                   : (FIRApp *)firebaseApp
                   : (RCTResponseSenderBlock)callback) {
-    FIRConfigUpdateListenerRegistration *newRegistration = [[FIRRemoteConfig remoteConfigWithApp:firebaseApp] addOnConfigUpdateListener:^( FIRRemoteConfigUpdate * _Nonnull configUpdate, NSError * _Nullable error) {
-        if (error != nil) {
-            NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+    if (![configUpdateHandlers valueForKey:firebaseApp.name]) {
+        FIRConfigUpdateListenerRegistration *newRegistration = [[FIRRemoteConfig remoteConfigWithApp:firebaseApp] addOnConfigUpdateListener:^( FIRRemoteConfigUpdate * _Nonnull configUpdate, NSError * _Nullable error) {
+            if (error != nil) {
+                NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
 
-            [userInfo setValue:@(error.code) forKey:@"code"];
-            [userInfo setValue:error.localizedDescription forKey:@"message"];
-            [userInfo setValue:error.localizedDescription forKey:@"nativeErrorMessage"];
-            
-            callback(@[[NSNull null], userInfo]);
-            return;
-        }
+                [userInfo setValue:@(error.code) forKey:@"code"];
+                [userInfo setValue:error.localizedDescription forKey:@"message"];
+                [userInfo setValue:error.localizedDescription forKey:@"nativeErrorMessage"];
+                
+                callback(@[[NSNull null], userInfo]);
+                return;
+            }
 
-        callback(@[
-            @{
-                @"updatedKeys" : [configUpdate.updatedKeys allObjects],
-            },
-            [NSNull null],
-        ]);
-    }];
-    
-    configUpdateHandlers[firebaseApp.name] = newRegistration;
+            callback(@[
+                @{
+                    @"updatedKeys" : [configUpdate.updatedKeys allObjects],
+                },
+                [NSNull null],
+            ]);
+        }];
+        
+        configUpdateHandlers[firebaseApp.name] = newRegistration;
+    }
 }
 
 RCT_EXPORT_METHOD(removeConfigUpdateRegistration : (FIRApp *)firebaseApp) {

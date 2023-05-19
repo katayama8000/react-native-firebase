@@ -178,8 +178,10 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
 
   @ReactMethod
   public void onConfigUpdated(String appName, Callback callback) {
-    ConfigUpdateListenerRegistration registration = module.onConfigUpdated(appName, callback);
-    mConfigUpdateRegistrations.put(appName, registration);
+    if (mConfigUpdateRegistrations.get(appName) == null) {
+      ConfigUpdateListenerRegistration registration = module.onConfigUpdated(appName, callback);
+      mConfigUpdateRegistrations.put(appName, registration);
+    }
   }
 
   @ReactMethod

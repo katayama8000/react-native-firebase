@@ -40,9 +40,15 @@ import * as remoteConfigModular from '@react-native-firebase/remote-config';
 import '@react-native-firebase/storage';
 import * as storageModular from '@react-native-firebase/storage';
 import jet from 'jet/platform/react-native';
-import React from 'react';
 import { AppRegistry, Button, NativeModules, Text, View } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
+import React, { useEffect, useState } from 'react';
+import {
+  fetch,
+  fetchAndActivate,
+  getRemoteConfig,
+  onConfigUpdated,
+} from '@react-native-firebase/remote-config';
 
 jet.exposeContextProperty('NativeModules', NativeModules);
 jet.exposeContextProperty('NativeEventEmitter', NativeEventEmitter);
@@ -90,8 +96,35 @@ function Root() {
           undefinedVariable.notAFunction();
         }}
       />
+      <View testId="spacer2" style={{ height: 20 }} />
+      <RemoteConfigTestComponent />
     </View>
   );
+}
+
+function RemoteConfigTestComponent() {
+  const [configValue, setConfigValue] = useState('no-value');
+
+  useEffect(() => {
+    const remoteConfig = getRemoteConfig();
+
+    fetchAndActivate(remoteConfig).then(() => {
+      setConfigValue(remoteConfig.getString('a_test_value'));
+
+      onConfigUpdated(remoteConfig, (event, error) => {
+        if (error) {
+          console.error('Remote config error:', error);
+          return;
+        }
+
+        fetch(remoteConfig).then(() => {
+          setConfigValue(remoteConfig.getString('a_test_value'));
+        });
+      });
+    });
+  }, []);
+
+  return <Text>{`a_test_value: "${configValue}"`}</Text>;
 }
 
 AppRegistry.registerComponent('testing', () => Root);
