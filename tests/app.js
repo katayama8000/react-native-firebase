@@ -96,8 +96,8 @@ function Root() {
           undefinedVariable.notAFunction();
         }}
       />
-      <View testId="spacer2" style={{ height: 20 }} />
-      <RemoteConfigTestComponent />
+      {/*<View testId="spacer2" style={{ height: 20 }} />*/}
+      {/*<RemoteConfigTestComponent />*/}
     </View>
   );
 }

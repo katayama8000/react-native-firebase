@@ -156,60 +156,6 @@ public class UniversalFirebaseConfigModule extends UniversalFirebaseModule {
     return ensureInitializedTask;
   }
 
-  ConfigUpdateListenerRegistration onConfigUpdated(String appName, Callback callback) {
-    FirebaseApp firebaseApp = FirebaseApp.getInstance(appName);
-
-    return FirebaseRemoteConfig.getInstance(firebaseApp).addOnConfigUpdateListener(new ConfigUpdateListener() {
-      @Override
-      public void onUpdate(@NotNull ConfigUpdate configUpdate) {
-        Set<String> updatedKeys = configUpdate.getUpdatedKeys();
-        List<String> updatedKeysList = new ArrayList<>(updatedKeys);
-
-        Map<String, Object> results = new HashMap<>();
-        results.put("updatedKeys", updatedKeysList);
-        callback.invoke(Arguments.makeNativeMap(results), null);
-      }
-
-      @Override
-      public void onError(@NotNull FirebaseRemoteConfigException error) {
-        WritableMap userInfoMap = Arguments.createMap();
-
-        FirebaseRemoteConfigException.Code code = error.getCode();
-        switch (code) {
-          case UNKNOWN:
-            userInfoMap.putString("code", "unknown");
-            break;
-          case CONFIG_UPDATE_STREAM_ERROR:
-            userInfoMap.putString("code", "config_update_stream_error");
-            break;
-          case CONFIG_UPDATE_MESSAGE_INVALID:
-            userInfoMap.putString("code", "config_update_message_invalid");
-            break;
-          case CONFIG_UPDATE_NOT_FETCHED:
-            userInfoMap.putString("code", "config_update_not_fetched");
-            break;
-          case CONFIG_UPDATE_UNAVAILABLE:
-            userInfoMap.putString("code", "config_update_unavailable");
-            break;
-        }
-
-        if (error.getCause() instanceof FirebaseRemoteConfigFetchThrottledException) {
-          userInfoMap.putString(
-            "message",
-            "fetch() operation cannot be completed successfully, due to throttling.");
-        } else {
-          userInfoMap.putString(
-            "message",
-            "fetch() operation cannot be completed successfully.");
-        }
-
-        userInfoMap.putString("nativeErrorMessage", error.getMessage());
-
-        callback.invoke(null, userInfoMap);
-      }
-    });
-  }
-
   Map<String, Object> getAllValuesForApp(String appName) {
     FirebaseRemoteConfig config =
       FirebaseRemoteConfig.getInstance(FirebaseApp.getInstance(appName));

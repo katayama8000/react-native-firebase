@@ -85,6 +85,8 @@ class FirebaseConfigModule extends FirebaseModule {
     this._lastFetchTime = -1;
     this._values = {};
     this._isWeb = Platform.OS !== 'ios' && Platform.OS !== 'android';
+
+    this.native.onConfigUpdated();
   }
 
   get defaultConfig() {
@@ -290,7 +292,17 @@ class FirebaseConfigModule extends FirebaseModule {
    * @returns {function} unsubscribe listener
    */
   onConfigUpdated(callback) {
-    this.native.onConfigUpdated(callback);
+    this.emitter.addListener(this.eventNameForApp('on_config_updated'), event => {
+      const { type } = event;
+      if (type === 'success') {
+        delete event.type;
+        callback(event, undefined);
+        return;
+      }
+
+      delete event.type;
+      callback(undefined, event);
+    });
     return () => this.native.removeConfigUpdateRegistration();
   }
 

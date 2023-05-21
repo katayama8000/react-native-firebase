@@ -17,22 +17,21 @@ package io.invertase.firebase.config;
  *
  */
 
-import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.Callback;
-import com.facebook.react.bridge.Promise;
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.*;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
+import com.google.firebase.remoteconfig.*;
+import io.invertase.firebase.common.ReactNativeFirebaseEvent;
+import io.invertase.firebase.common.ReactNativeFirebaseEventEmitter;
 import io.invertase.firebase.common.ReactNativeFirebaseModule;
+import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
+import java.util.Set;
 
 public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
   private static final String SERVICE_NAME = "Config";
@@ -177,9 +176,68 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
   }
 
   @ReactMethod
-  public void onConfigUpdated(String appName, Callback callback) {
+  public void onConfigUpdated(String appName) {
     if (mConfigUpdateRegistrations.get(appName) == null) {
-      ConfigUpdateListenerRegistration registration = module.onConfigUpdated(appName, callback);
+      FirebaseApp firebaseApp = FirebaseApp.getInstance(appName);
+      ReactNativeFirebaseEventEmitter emitter =
+        ReactNativeFirebaseEventEmitter.getSharedInstance();
+
+      ConfigUpdateListenerRegistration registration = FirebaseRemoteConfig.getInstance(firebaseApp).addOnConfigUpdateListener(new ConfigUpdateListener() {
+        @Override
+        public void onUpdate(@NotNull ConfigUpdate configUpdate) {
+          Set<String> updatedKeys = configUpdate.getUpdatedKeys();
+          List<String> updatedKeysList = new ArrayList<>(updatedKeys);
+
+          Map<String, Object> results = new HashMap<>();
+          results.put("type", "success");
+          results.put("updatedKeys", updatedKeysList);
+          ReactNativeFirebaseEvent event =
+            new ReactNativeFirebaseEvent("on_config_updated", Arguments.makeNativeMap(results), appName);
+          emitter.sendEvent(event);
+        }
+
+        @Override
+        public void onError(@NotNull FirebaseRemoteConfigException error) {
+          WritableMap userInfoMap = Arguments.createMap();
+          userInfoMap.putString("type", "error");
+
+          FirebaseRemoteConfigException.Code code = error.getCode();
+          switch (code) {
+            case UNKNOWN:
+              userInfoMap.putString("code", "unknown");
+              break;
+            case CONFIG_UPDATE_STREAM_ERROR:
+              userInfoMap.putString("code", "config_update_stream_error");
+              break;
+            case CONFIG_UPDATE_MESSAGE_INVALID:
+              userInfoMap.putString("code", "config_update_message_invalid");
+              break;
+            case CONFIG_UPDATE_NOT_FETCHED:
+              userInfoMap.putString("code", "config_update_not_fetched");
+              break;
+            case CONFIG_UPDATE_UNAVAILABLE:
+              userInfoMap.putString("code", "config_update_unavailable");
+              break;
+          }
+
+          if (error.getCause() instanceof FirebaseRemoteConfigFetchThrottledException) {
+            userInfoMap.putString(
+              "message",
+              "fetch() operation cannot be completed successfully, due to throttling.");
+          } else {
+            userInfoMap.putString(
+              "message",
+              "fetch() operation cannot be completed successfully.");
+          }
+
+          userInfoMap.putString("nativeErrorMessage", error.getMessage());
+
+          ReactNativeFirebaseEvent event =
+            new ReactNativeFirebaseEvent("on_config_updated", userInfoMap, appName);
+          emitter.sendEvent(event);
+        }
+      });
+
       mConfigUpdateRegistrations.put(appName, registration);
     }
   }

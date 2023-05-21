@@ -22,6 +22,8 @@
 #import "RNFBConfigModule.h"
 #import "RNFBSharedUtils.h"
 
+static NSString *const ON_CONFIG_UPDATED_EVENT = @"on_config_updated";
+
 static __strong NSMutableDictionary *configUpdateHandlers;
 
 @implementation RNFBConfigModule
@@ -247,28 +249,31 @@ RCT_EXPORT_METHOD(setDefaultsFromResource
   }
 }
 
-RCT_EXPORT_METHOD(onConfigUpdated
-                  : (FIRApp *)firebaseApp
-                  : (RCTResponseSenderBlock)callback) {
+RCT_EXPORT_METHOD(onConfigUpdated : (FIRApp *)firebaseApp) {
     if (![configUpdateHandlers valueForKey:firebaseApp.name]) {
         FIRConfigUpdateListenerRegistration *newRegistration = [[FIRRemoteConfig remoteConfigWithApp:firebaseApp] addOnConfigUpdateListener:^( FIRRemoteConfigUpdate * _Nonnull configUpdate, NSError * _Nullable error) {
             if (error != nil) {
                 NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
 
+                [userInfo setValue:@"error" forKey:@"type"];
                 [userInfo setValue:@(error.code) forKey:@"code"];
                 [userInfo setValue:error.localizedDescription forKey:@"message"];
                 [userInfo setValue:error.localizedDescription forKey:@"nativeErrorMessage"];
                 
-                callback(@[[NSNull null], userInfo]);
+                [RNFBSharedUtils sendJSEventForApp:firebaseApp
+                                              name:ON_CONFIG_UPDATED_EVENT
+                                              body:userInfo];
                 return;
             }
 
-            callback(@[
-                @{
-                    @"updatedKeys" : [configUpdate.updatedKeys allObjects],
-                },
-                [NSNull null],
-            ]);
+            NSMutableDictionary *results = [NSMutableDictionary dictionary];
+            
+            [results setValue:@"success" forKey:@"type"];
+            [results setValue:[configUpdate.updatedKeys allObjects] forKey:@"updatedKeys"];
+            
+            [RNFBSharedUtils sendJSEventForApp:firebaseApp
+                                          name:ON_CONFIG_UPDATED_EVENT
+                                          body:results];
         }];
         
         configUpdateHandlers[firebaseApp.name] = newRegistration;
