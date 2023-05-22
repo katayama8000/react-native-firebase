@@ -224,16 +224,7 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
               break;
           }
 
-          if (error.getCause() instanceof FirebaseRemoteConfigFetchThrottledException) {
-            userInfoMap.putString(
-              "message",
-              "fetch() operation cannot be completed successfully, due to throttling.");
-          } else {
-            userInfoMap.putString(
-              "message",
-              "fetch() operation cannot be completed successfully.");
-          }
-
+          userInfoMap.putString("message", error.getMessage());
           userInfoMap.putString("nativeErrorMessage", error.getMessage());
 
           ReactNativeFirebaseEvent event =
