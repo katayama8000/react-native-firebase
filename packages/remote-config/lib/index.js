@@ -86,6 +86,11 @@ class FirebaseConfigModule extends FirebaseModule {
     this._values = {};
     this._isWeb = Platform.OS !== 'ios' && Platform.OS !== 'android';
 
+    this.emitter.addListener(this.eventNameForApp('on_config_updated'), event => {
+      console.error('EVENT!!!!');
+      this.emitter.emit(this.eventNameForApp('onConfigUpdated'), event);
+    });
+
     this.native.onConfigUpdated();
   }
 
@@ -288,22 +293,41 @@ class FirebaseConfigModule extends FirebaseModule {
   /**
    * Registers a listener to changes in the configuration.
    *
-   * @param callback - function called on config change
+   * @param listenerOrObserver - function called on config change
    * @returns {function} unsubscribe listener
    */
-  onConfigUpdated(callback) {
-    this.emitter.addListener(this.eventNameForApp('on_config_updated'), event => {
-      const { type } = event;
-      if (type === 'success') {
+  onConfigUpdated(listenerOrObserver) {
+    const listener = this._parseListener(listenerOrObserver);
+    const subscription = this.emitter.addListener(
+      this.eventNameForApp('onConfigUpdated'),
+      event => {
+        console.error('HEHEHEHEHE');
+        const { type } = event;
         delete event.type;
-        callback(event, undefined);
-        return;
-      }
 
-      delete event.type;
-      callback(undefined, event);
-    });
-    return () => this.native.removeConfigUpdateRegistration();
+        if (type === 'success') {
+          Promise.resolve().then(() => {
+            listener(event, undefined);
+          });
+          return;
+        }
+
+        Promise.resolve().then(() => {
+          listener(undefined, event);
+        });
+      },
+    );
+
+    return () => {
+      this.native.removeConfigUpdateRegistration();
+      subscription.remove();
+    };
+  }
+
+  _parseListener(listenerOrObserver) {
+    return typeof listenerOrObserver === 'object'
+      ? listenerOrObserver.next.bind(listenerOrObserver)
+      : listenerOrObserver;
   }
 
   _updateFromConstants(constants) {
@@ -350,7 +374,7 @@ export default createModuleNamespace({
   version,
   namespace,
   nativeModuleName,
-  nativeEvents: false,
+  nativeEvents: ['on_config_updated'],
   hasMultiAppSupport: true,
   hasCustomUrlOrRegionSupport: false,
   ModuleClass: FirebaseConfigModule,

@@ -179,12 +179,13 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
   public void onConfigUpdated(String appName) {
     if (mConfigUpdateRegistrations.get(appName) == null) {
       FirebaseApp firebaseApp = FirebaseApp.getInstance(appName);
-      ReactNativeFirebaseEventEmitter emitter =
-        ReactNativeFirebaseEventEmitter.getSharedInstance();
 
       ConfigUpdateListenerRegistration registration = FirebaseRemoteConfig.getInstance(firebaseApp).addOnConfigUpdateListener(new ConfigUpdateListener() {
         @Override
         public void onUpdate(@NotNull ConfigUpdate configUpdate) {
+          ReactNativeFirebaseEventEmitter emitter =
+            ReactNativeFirebaseEventEmitter.getSharedInstance();
+
           Set<String> updatedKeys = configUpdate.getUpdatedKeys();
           List<String> updatedKeysList = new ArrayList<>(updatedKeys);
 
@@ -198,6 +199,9 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
 
         @Override
         public void onError(@NotNull FirebaseRemoteConfigException error) {
+          ReactNativeFirebaseEventEmitter emitter =
+            ReactNativeFirebaseEventEmitter.getSharedInstance();
+
           WritableMap userInfoMap = Arguments.createMap();
           userInfoMap.putString("type", "error");
 
