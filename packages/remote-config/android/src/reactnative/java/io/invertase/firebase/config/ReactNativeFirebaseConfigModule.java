@@ -190,7 +190,8 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
           List<String> updatedKeysList = new ArrayList<>(updatedKeys);
 
           Map<String, Object> results = new HashMap<>();
-          results.put("type", "success");
+          results.put("appName", appName);
+          results.put("resultType", "success");
           results.put("updatedKeys", updatedKeysList);
           ReactNativeFirebaseEvent event =
             new ReactNativeFirebaseEvent("on_config_updated", Arguments.makeNativeMap(results), appName);
@@ -203,7 +204,8 @@ public class ReactNativeFirebaseConfigModule extends ReactNativeFirebaseModule {
             ReactNativeFirebaseEventEmitter.getSharedInstance();
 
           WritableMap userInfoMap = Arguments.createMap();
-          userInfoMap.putString("type", "error");
+          userInfoMap.putString("resultType", "error");
+          userInfoMap.putString("appName", appName);
 
           FirebaseRemoteConfigException.Code code = error.getCode();
           switch (code) {

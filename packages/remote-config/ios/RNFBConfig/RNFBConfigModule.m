@@ -255,7 +255,7 @@ RCT_EXPORT_METHOD(onConfigUpdated : (FIRApp *)firebaseApp) {
             if (error != nil) {
                 NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
 
-                [userInfo setValue:@"error" forKey:@"type"];
+                [userInfo setValue:@"error" forKey:@"resultType"];
                 [userInfo setValue:@(error.code) forKey:@"code"];
                 [userInfo setValue:error.localizedDescription forKey:@"message"];
                 [userInfo setValue:error.localizedDescription forKey:@"nativeErrorMessage"];
@@ -268,7 +268,7 @@ RCT_EXPORT_METHOD(onConfigUpdated : (FIRApp *)firebaseApp) {
 
             NSMutableDictionary *results = [NSMutableDictionary dictionary];
             
-            [results setValue:@"success" forKey:@"type"];
+            [results setValue:@"success" forKey:@"resultType"];
             [results setValue:[configUpdate.updatedKeys allObjects] forKey:@"updatedKeys"];
             
             [RNFBSharedUtils sendJSEventForApp:firebaseApp
