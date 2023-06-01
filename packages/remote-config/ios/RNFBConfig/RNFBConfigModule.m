@@ -89,25 +89,25 @@ RCT_EXPORT_MODULE();
 }
 
 - (id)init {
-    self = [super init];
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
+  self = [super init];
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
     configUpdateHandlers = [[NSMutableDictionary alloc] init];
-    });
-    return self;
+  });
+  return self;
 }
 
 - (void)dealloc {
-    [self invalidate];
+  [self invalidate];
 }
 
 - (void)invalidate {
-    for (NSString *key in configUpdateHandlers) {
-        FIRConfigUpdateListenerRegistration *registration = [configUpdateHandlers objectForKey:key];
-        [registration remove];
-    }
-    
-    [configUpdateHandlers removeAllObjects];
+  for (NSString *key in configUpdateHandlers) {
+    FIRConfigUpdateListenerRegistration *registration = [configUpdateHandlers objectForKey:key];
+    [registration remove];
+  }
+
+  [configUpdateHandlers removeAllObjects];
 }
 
 #pragma mark -
@@ -250,43 +250,45 @@ RCT_EXPORT_METHOD(setDefaultsFromResource
 }
 
 RCT_EXPORT_METHOD(onConfigUpdated : (FIRApp *)firebaseApp) {
-    if (![configUpdateHandlers valueForKey:firebaseApp.name]) {
-        FIRConfigUpdateListenerRegistration *newRegistration = [[FIRRemoteConfig remoteConfigWithApp:firebaseApp] addOnConfigUpdateListener:^( FIRRemoteConfigUpdate * _Nonnull configUpdate, NSError * _Nullable error) {
-            if (error != nil) {
+  if (![configUpdateHandlers valueForKey:firebaseApp.name]) {
+    FIRConfigUpdateListenerRegistration *newRegistration =
+        [[FIRRemoteConfig remoteConfigWithApp:firebaseApp]
+            addOnConfigUpdateListener:^(FIRRemoteConfigUpdate *_Nonnull configUpdate,
+                                        NSError *_Nullable error) {
+              if (error != nil) {
                 NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
 
                 [userInfo setValue:@"error" forKey:@"resultType"];
                 [userInfo setValue:@(error.code) forKey:@"code"];
                 [userInfo setValue:error.localizedDescription forKey:@"message"];
                 [userInfo setValue:error.localizedDescription forKey:@"nativeErrorMessage"];
-                
+
                 [RNFBSharedUtils sendJSEventForApp:firebaseApp
                                               name:ON_CONFIG_UPDATED_EVENT
                                               body:userInfo];
                 return;
-            }
+              }
 
-            NSMutableDictionary *results = [NSMutableDictionary dictionary];
-            
-            [results setValue:@"success" forKey:@"resultType"];
-            [results setValue:[configUpdate.updatedKeys allObjects] forKey:@"updatedKeys"];
-            
-            [RNFBSharedUtils sendJSEventForApp:firebaseApp
-                                          name:ON_CONFIG_UPDATED_EVENT
-                                          body:results];
-        }];
-        
-        configUpdateHandlers[firebaseApp.name] = newRegistration;
-    }
+              NSMutableDictionary *results = [NSMutableDictionary dictionary];
+
+              [results setValue:@"success" forKey:@"resultType"];
+              [results setValue:[configUpdate.updatedKeys allObjects] forKey:@"updatedKeys"];
+
+              [RNFBSharedUtils sendJSEventForApp:firebaseApp
+                                            name:ON_CONFIG_UPDATED_EVENT
+                                            body:results];
+            }];
+
+    configUpdateHandlers[firebaseApp.name] = newRegistration;
+  }
 }
 
 RCT_EXPORT_METHOD(removeConfigUpdateRegistration : (FIRApp *)firebaseApp) {
   if ([configUpdateHandlers valueForKey:firebaseApp.name]) {
-      [[configUpdateHandlers objectForKey:firebaseApp.name] remove];
-      [configUpdateHandlers removeObjectForKey:firebaseApp.name];
+    [[configUpdateHandlers objectForKey:firebaseApp.name] remove];
+    [configUpdateHandlers removeObjectForKey:firebaseApp.name];
   }
 }
-
 
 #pragma mark -
 #pragma mark Internal Helper Methods
