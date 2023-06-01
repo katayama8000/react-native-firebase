@@ -86,10 +86,6 @@ class FirebaseConfigModule extends FirebaseModule {
     this._values = {};
     this._isWeb = Platform.OS !== 'ios' && Platform.OS !== 'android';
 
-    this.emitter.addListener(this.eventNameForApp('on_config_updated'), event => {
-      this.emitter.emit(this.eventNameForApp('onConfigUpdated'), event);
-    });
-
     this.native.onConfigUpdated();
   }
 
@@ -298,15 +294,13 @@ class FirebaseConfigModule extends FirebaseModule {
   onConfigUpdated(listenerOrObserver) {
     const listener = this._parseListener(listenerOrObserver);
     const subscription = this.emitter.addListener(
-      this.eventNameForApp('onConfigUpdated'),
+      this.eventNameForApp('on_config_updated'),
       event => {
         const { resultType } = event;
         delete event.resultType;
 
         if (resultType === 'success') {
-          Promise.resolve().then(() => {
-            listener(event, undefined);
-          });
+          listener(event, undefined);
           return;
         }
 
