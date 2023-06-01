@@ -37,7 +37,7 @@ beforeEach(async function beforeEach() {
 
   if (retry > 0) {
     if (retry === 1) {
-      console.log('');
+      console.log('___');
       console.warn('⚠️ A test failed:');
       console.warn(`️   ->  ${this.currentTest.title}`);
     }
